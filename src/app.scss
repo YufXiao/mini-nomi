@@ -1,0 +1,77 @@
+page {
+  --bg-deep: #020817;
+  --bg-lighter: #0F172A;
+  --accent-cyan: rgba(56, 189, 248, 1);
+  --accent-green: #32D74B;
+  --accent-red: #FF453A;
+  --text-white: #F8FAFC;
+  --text-dim: rgba(248, 250, 252, 0.5);
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+
+  background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-lighter) 100%);
+  background-color: var(--bg-deep); /* Fallback */
+  min-height: 100vh;
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+  color: var(--text-white);
+  box-sizing: border-box;
+}
+
+view, text, button, image, navigator {
+  box-sizing: border-box;
+}
+
+/* Transitions */
+.fade-out {
+  animation: fadeOut 0.3s forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Particle Background */
+.bg-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 70%);
+  filter: blur(80rpx);
+  animation: float-bubble 20s infinite ease-in-out;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes float-bubble {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(20rpx, -40rpx); }
+}
+
+/* Utilities */
+.shake {
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-2rpx, 0, 0); }
+  20%, 80% { transform: translate3d(4rpx, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-6rpx, 0, 0); }
+  40%, 60% { transform: translate3d(6rpx, 0, 0); }
+}

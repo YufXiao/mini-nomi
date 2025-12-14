@@ -13,10 +13,19 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 export function getSettings(): Settings {
-  const s = Taro.getStorageSync('settings') || {}
-  return { ...DEFAULT_SETTINGS, ...s }
+  try {
+    const s = Taro.getStorageSync('settings') || {}
+    return { ...DEFAULT_SETTINGS, ...s }
+  } catch (e) {
+    console.error('Failed to get settings', e)
+    return DEFAULT_SETTINGS
+  }
 }
 
 export function setSettings(next: Settings) {
-  Taro.setStorageSync('settings', next)
+  try {
+    Taro.setStorageSync('settings', next)
+  } catch (e) {
+    console.error('Failed to set settings', e)
+  }
 }

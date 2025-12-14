@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { View, Text, Switch } from '@tarojs/components'
-import { getSettings, setSettings, type Settings } from '@/utils/settings'
+import { getSettings, setSettings } from '@/utils/settings'
+import type { Settings } from '@/utils/settings'
 import './index.scss'
 
 export default function SettingsPage() {

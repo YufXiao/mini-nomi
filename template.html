@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Memory Dungeon - Deep Ocean Mode</title>
+    <style>
+        :root {
+            --bg-deep: #020817;
+            --bg-lighter: #0F172A;
+            --accent-cyan: rgba(56, 189, 248, 1);
+            --accent-cyan-glow: rgba(56, 189, 248, 0.6);
+            --accent-green: #32D74B;
+            --accent-red: #FF453A;
+            --text-white: #F8FAFC;
+            --text-dim: rgba(248, 250, 252, 0.5);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-lighter) 100%);
+            color: var(--text-white);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* --- 公用组件 --- */
+        .hidden { display: none !important; }
+        .fade-out { animation: fadeOut 0.5s forwards; }
+        .fade-in { animation: fadeIn 0.5s forwards; }
+
+        @keyframes fadeOut { to { opacity: 0; transform: scale(0.95); } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
+
+        /* 背景装饰粒子 */
+        .bg-particle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
+            animation: float-bg 20s infinite ease-in-out;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes float-bg {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(10px, -20px); }
+        }
+
+        /* --- 阶段 0: 首页 (Home Phase) --- */
+        #home-phase {
+            width: 100%;
+            height: 100%;
+            display: flex; /* 初始显示 */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 30;
+            background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-lighter) 100%);
+        }
+
+        .game-title {
+            font-size: 48px;
+            font-weight: 900;
+            line-height: 1.1;
+            text-align: center;
+            letter-spacing: -2px;
+            margin-bottom: 60px;
+            background: linear-gradient(180deg, #fff, var(--text-dim));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+        }
+
+        .settings-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            padding: 10px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .settings-btn:hover { opacity: 1; }
+
+        .main-start-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--accent-cyan);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            animation: pulse-glow 3s infinite ease-in-out;
+        }
+
+        .main-start-btn:active {
+            transform: scale(0.95);
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent-cyan);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 30px rgba(56, 189, 248, 0.1); }
+            50% { box-shadow: 0 0 50px rgba(56, 189, 248, 0.3); border-color: rgba(255, 255, 255, 0.5); }
+        }
+
+        /* --- 阶段 1: 记忆阶段 (Memorization Phase) --- */
+        #memorization-phase {
+            width: 100%;
+            height: 100%;
+            display: none; /* 初始隐藏 */
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-red));
+            box-shadow: 0 0 8px rgba(50, 215, 75, 0.6);
+            transform-origin: left;
+            /* 动画由 JS 控制添加 */
+        }
+        .anim-countdown { animation: countdown 15s linear forwards; }
+        @keyframes countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+        .list-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            gap: 24px;
+            overflow-y: auto;
+        }
+
+        .word-row {
+            width: 100%;
+            max-width: 340px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .word-english { font-size: 28px; font-weight: 700; letter-spacing: 0.5px; font-family: 'Courier New', monospace; }
+        .syllable-1 { opacity: 1; color: var(--text-white); text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .syllable-2 { opacity: 0.6; }
+        .syllable-3 { opacity: 0.8; }
+        .word-chinese { font-size: 15px; color: var(--text-dim); }
+
+        .bottom-area {
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(0deg, var(--bg-deep) 20%, transparent 100%);
+        }
+
+        .ghost-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: var(--text-white);
+            padding: 14px 48px;
+            border-radius: 100px;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.05);
+            animation: breathe 3s infinite ease-in-out;
+            transition: all 0.2s;
+        }
+        .ghost-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.1); }
+        @keyframes breathe {
+            0%, 100% { box-shadow: 0 0 15px rgba(56, 189, 248, 0.05); border-color: rgba(255, 255, 255, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(56, 189, 248, 0.2); border-color: rgba(255, 255, 255, 0.6); }
+        }
+
+        /* --- 阶段 2: 气泡战斗阶段 (Bubble Combat Phase) --- */
+        #combat-phase {
+            width: 100%;
+            height: 100%;
+            display: none; /* 初始隐藏 */
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 20;
+        }
+
+        /* 顶部问题区 */
+        .combat-header {
+            flex: 0 0 25%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* 跳过按钮 */
+        .skip-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-dim);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 40;
+            transition: all 0.2s;
+        }
+        .skip-btn:active { background: rgba(255, 69, 58, 0.2); border-color: var(--accent-red); color: var(--accent-red); }
+        
+        .progress-dots {
+            position: absolute;
+            top: 20px;
+            left: 20px; /* 移到左边给 Skip 让位 */
+            display: flex;
+            gap: 6px;
+        }
+        .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+        .dot.active { background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); }
+
+        .question-text {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--text-white);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            animation: float-text 6s ease-in-out infinite;
+        }
+        @keyframes float-text {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* 中部填空槽 */
+        .slots-container {
+            flex: 0 0 25%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.1s; /* 用于震动效果 */
+        }
+
+        .slot {
+            height: 60px;
+            min-width: 60px;
+            padding: 0 15px;
+            border-radius: 16px;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: transparent; /* 初始文字透明 */
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .slot.filled {
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.5);
+            background: var(--glass-bg);
+            color: var(--text-white);
+            text-shadow: 0 0 10px var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+        
+        .slot.success {
+            border-color: var(--accent-green);
+            background: rgba(50, 215, 75, 0.1);
+            box-shadow: 0 0 20px rgba(50, 215, 75, 0.4);
+            transform: scale(1.1);
+        }
+
+        .slot.error {
+            border-color: var(--accent-red);
+            background: rgba(255, 69, 58, 0.1);
+        }
+
+        /* 底部气泡池 */
+        .bubble-pool {
+            flex: 0 0 50%;
+            position: relative;
+            overflow: hidden;
+            /* 极淡的顶部渐变，区分区域 */
+            background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 20%);
+        }
+
+        .bubble {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--accent-cyan);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            animation: float-bubble 4s ease-in-out infinite;
+        }
+
+        .bubble:active { transform: scale(0.9); background: rgba(255,255,255,0.15); }
+        .bubble.used { opacity: 0; pointer-events: none; transform: scale(0); }
+
+        @keyframes float-bubble {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+
+        /* 错误震动动画 */
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        /* 胜利转场文字 */
+        .victory-text {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            font-weight: 900;
+            color: var(--text-white);
+            text-shadow: 0 0 30px var(--accent-cyan);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 30;
+        }
+        .victory-anim { animation: victoryPop 1.5s ease-out forwards; }
+        @keyframes victoryPop {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); filter: blur(10px); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); filter: blur(0); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); filter: blur(20px); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 背景装饰粒子 -->
+    <div class="bg-particle" style="width: 120px; height: 120px; top: 15%; left: 10%; filter: blur(40px);"></div>
+    <div class="bg-particle" style="width: 200px; height: 200px; top: 60%; right: -20px; filter: blur(50px); animation-delay: -5s;"></div>
+
+    <!-- 阶段 0: 首页 (Home Phase) -->
+    <div id="home-phase">
+        <div class="settings-btn" onclick="alert('Settings clicked!')">⚙️</div>
+        <div class="game-title">MEMORY<br>DUNGEON</div>
+        <button class="main-start-btn" id="home-start-btn">START<br>RUN</button>
+    </div>
+
+    <!-- 阶段 1: 记忆阶段 -->
+    <div id="memorization-phase">
+        <div class="progress-container">
+            <div class="progress-bar" id="memo-progress-bar"></div>
+        </div>
+
+        <div class="list-container">
+            <!-- 单词列表由 JS 生成 -->
+        </div>
+
+        <div class="bottom-area">
+            <button class="ghost-btn" id="im-ready-btn">I'M READY</button>
+        </div>
+    </div>
+
+    <!-- 阶段 2: 气泡战斗阶段 -->
+    <div id="combat-phase">
+        <!-- 胜利动效占位 -->
+        <div class="victory-text" id="victory-text">CONNECT</div>
+
+        <div class="combat-header">
+            <div class="progress-dots" id="progress-dots">
+                <!-- 点点由 JS 生成 -->
+            </div>
+            <button class="skip-btn" id="combat-skip-btn">SKIP ⏭</button>
+            <div class="question-text" id="question-text">vt. 连接；联系</div>
+        </div>
+
+        <div class="slots-container" id="slots-container">
+            <!-- 填空槽由 JS 生成 -->
+        </div>
+
+        <div class="bubble-pool" id="bubble-pool">
+            <!-- 气泡由 JS 生成 -->
+        </div>
+    </div>
+
+    <script>
+        // 游戏数据
+        const wordData = [
+            { id: 1, word: 'memory', syllables: ['mem', 'o', 'ry'], cn: 'n. 记忆；回忆' },
+            { id: 2, word: 'dungeon', syllables: ['dun', 'geon'], cn: 'n. 地牢；土牢' },
+            { id: 3, word: 'fragment', syllables: ['frag', 'ment'], cn: 'n. 碎片；片段' },
+            { id: 4, word: 'ephemeral', syllables: ['e', 'phem', 'er', 'al'], cn: 'adj. 短暂的' },
+            { id: 5, word: 'abyss', syllables: ['a', 'byss'], cn: 'n. 深渊' }
+        ];
+
+        let currentLevel = 0;
+        let currentSyllables = []; 
+        let userFilled = [];
+        let memoTimeout;
+
+        const homePhase = document.getElementById('home-phase');
+        const memoPhase = document.getElementById('memorization-phase');
+        const combatPhase = document.getElementById('combat-phase');
+        
+        const homeStartBtn = document.getElementById('home-start-btn');
+        const imReadyBtn = document.getElementById('im-ready-btn');
+        const combatSkipBtn = document.getElementById('combat-skip-btn');
+        const memoProgressBar = document.getElementById('memo-progress-bar');
+
+        // ------------------ 首页逻辑 ------------------
+
+        homeStartBtn.addEventListener('click', () => {
+            // 切换到记忆阶段
+            homePhase.classList.add('fade-out');
+            setTimeout(() => {
+                homePhase.classList.add('hidden');
+                homePhase.classList.remove('fade-out'); // 清理以便下次使用
+                startMemoPhase();
+            }, 400);
+        });
+
+        // ------------------ 记忆阶段逻辑 ------------------
+
+        function startMemoPhase() {
+            // FIX: 显式设置 display 属性以显示界面
+            memoPhase.style.display = 'flex';
+            memoPhase.classList.remove('hidden');
+            memoPhase.classList.add('fade-in');
+            
+            // 重置进度条动画
+            memoProgressBar.classList.remove('anim-countdown');
+            void memoProgressBar.offsetWidth; // 触发重绘
+            memoProgressBar.classList.add('anim-countdown');
+
+            // 渲染列表
+            const listContainer = document.querySelector('.list-container');
+            listContainer.innerHTML = ''; // 清空旧数据
+            wordData.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'word-row fade-in';
+                row.style.animationDelay = `${index * 0.1}s`;
+                
+                let sylHtml = '';
+                item.syllables.forEach((syl, i) => {
+                    const opacityClass = `syllable-${(i % 3) + 1}`;
+                    const dash = i < item.syllables.length - 1 ? '-' : '';
+                    sylHtml += `<span class="${opacityClass}">${syl}</span>${dash}`;
+                });
+
+                row.innerHTML = `
+                    <div class="word-english">${sylHtml}</div>
+                    <div class="word-chinese">${item.cn}</div>
+                `;
+                listContainer.appendChild(row);
+            });
+
+            // 倒计时结束后自动开始
+            clearTimeout(memoTimeout);
+            memoTimeout = setTimeout(() => {
+                // 只有当前还在记忆阶段才跳转
+                // 注意：这里需要检查 display 属性或者 hidden class
+                if(memoPhase.style.display !== 'none' && !memoPhase.classList.contains('hidden')) {
+                   goToCombat();
+                }
+            }, 15000);
+        }
+
+        imReadyBtn.addEventListener('click', () => {
+            goToCombat();
+        });
+
+        function goToCombat() {
+            clearTimeout(memoTimeout);
+            memoPhase.classList.add('fade-out');
+            setTimeout(() => {
+                memoPhase.style.display = 'none'; // FIX: 显式隐藏
+                memoPhase.classList.add('hidden');
+                memoPhase.classList.remove('fade-out');
+                startCombat();
+            }, 500);
+        }
+
+        // ------------------ 战斗阶段逻辑 ------------------
+
+        function startCombat() {
+            combatPhase.style.display = 'flex';
+            combatPhase.classList.add('fade-in');
+            
+            // 生成顶部进度点
+            const dotsContainer = document.getElementById('progress-dots');
+            dotsContainer.innerHTML = '';
+            wordData.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = i === 0 ? 'dot active' : 'dot';
+                dotsContainer.appendChild(dot);
+            });
+
+            loadLevel(0);
+        }
+
+        combatSkipBtn.addEventListener('click', () => {
+             // 模拟跳过：直接进入下一关（或者结算为失败）
+             // 简单震动反馈
+             combatPhase.classList.add('shake');
+             setTimeout(() => combatPhase.classList.remove('shake'), 400);
+             
+             // 延迟一点进入下一关
+             setTimeout(() => {
+                 loadLevel(currentLevel + 1);
+             }, 300);
+        });
+
+        function loadLevel(index) {
+            currentLevel = index;
+            if (index >= wordData.length) {
+                alert("Run Completed! Returning to Home.");
+                // 返回首页
+                combatPhase.style.display = 'none';
+                homePhase.classList.remove('hidden');
+                homePhase.classList.add('fade-in');
+                return;
+            }
+
+            const data = wordData[index];
+            currentSyllables = [...data.syllables]; 
+            userFilled = [];
+
+            // 1. 更新顶部信息
+            document.getElementById('question-text').textContent = data.cn;
+            
+            // 更新进度点
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((d, i) => i === index ? d.classList.add('active') : d.classList.remove('active'));
+
+            // 2. 生成填空槽
+            const slotsContainer = document.getElementById('slots-container');
+            slotsContainer.innerHTML = '';
+            slotsContainer.className = 'slots-container'; 
+            
+            data.syllables.forEach(() => {
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                slotsContainer.appendChild(slot);
+            });
+
+            // 3. 生成气泡 (打乱顺序)
+            const bubblePool = document.getElementById('bubble-pool');
+            bubblePool.innerHTML = '';
+            
+            const shuffled = data.syllables
+                .map((text, i) => ({ text, originalIdx: i }))
+                .sort(() => Math.random() - 0.5);
+
+            shuffled.forEach((item, i) => {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.textContent = item.text;
+                bubble.dataset.val = item.text;
+                
+                const top = 10 + Math.random() * 60; 
+                const left = 10 + Math.random() * 70;
+                
+                bubble.style.top = `${top}%`;
+                bubble.style.left = `${left}%`;
+                bubble.style.animationDelay = `${Math.random() * -5}s`;
+
+                bubble.addEventListener('click', (e) => handleBubbleClick(e.target));
+                
+                bubblePool.appendChild(bubble);
+            });
+        }
+
+        function handleBubbleClick(bubble) {
+            if (userFilled.length >= currentSyllables.length) return;
+
+            bubble.classList.add('used');
+            
+            const val = bubble.dataset.val;
+            userFilled.push(val);
+
+            const slotIndex = userFilled.length - 1;
+            const slots = document.querySelectorAll('.slot');
+            const targetSlot = slots[slotIndex];
+
+            targetSlot.textContent = val;
+            targetSlot.classList.add('filled');
+
+            if (userFilled.length === currentSyllables.length) {
+                checkAnswer();
+            }
+        }
+
+        function checkAnswer() {
+            const isCorrect = userFilled.join('') === currentSyllables.join('');
+            const slotsContainer = document.getElementById('slots-container');
+            const slots = document.querySelectorAll('.slot');
+
+            if (isCorrect) {
+                slots.forEach(s => s.classList.add('success'));
+                
+                const victoryText = document.getElementById('victory-text');
+                victoryText.textContent = wordData[currentLevel].word.toUpperCase();
+                victoryText.classList.remove('victory-anim');
+                void victoryText.offsetWidth; 
+                victoryText.classList.add('victory-anim');
+
+                setTimeout(() => {
+                    loadLevel(currentLevel + 1);
+                }, 1200);
+
+            } else {
+                slotsContainer.classList.remove('shake');
+                void slotsContainer.offsetWidth;
+                slotsContainer.classList.add('shake');
+
+                slots.forEach(s => s.classList.add('error'));
+
+                setTimeout(() => {
+                    userFilled = [];
+                    slots.forEach(s => {
+                        s.className = 'slot';
+                        s.textContent = '';
+                    });
+                    document.querySelectorAll('.bubble').forEach(b => b.classList.remove('used'));
+                }, 600);
+            }
+        }
+
+    </script>
+</body>
+</html>

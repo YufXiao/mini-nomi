@@ -3,360 +3,169 @@
   height: 100vh;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-lighter) 100%);
-}
-
-/* --- 2. 首页 (Home Phase) --- */
-.home-phase {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 30;
-  padding-bottom: 100rpx;
-}
-
-.game-title {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 120rpx;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  transition: background 1s ease;
   
-  text {
-    font-size: 96rpx;
-    font-weight: 900;
-    line-height: 1.1;
-    color: transparent;
-    background: linear-gradient(180deg, #fff, rgba(248,250,252,0.5));
-    -webkit-background-clip: text;
-    background-clip: text;
-    text-shadow: 0 0 60rpx rgba(56, 189, 248, 0.3);
+  /* Biome Backgrounds */
+  &.biome-void {
+    background: #0f172a; // Dark Slate
   }
-}
-
-.main-start-btn {
-  width: 400rpx;
-  height: 400rpx;
-  border-radius: 50%;
-  background: var(--glass-bg);
-  border: 2rpx solid rgba(255, 255, 255, 0.2);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  backdrop-filter: blur(20rpx);
-  animation: pulse-glow 3s infinite;
   
-  text {
-    font-size: 48rpx;
-    font-weight: 800;
-    color: var(--text-white);
-    letter-spacing: 4rpx;
+  &.biome-mines {
+    background: linear-gradient(to bottom, #1e1b4b, #312e81); // Indigo/Purple
+  }
+  
+  &.biome-ruins {
+    background: linear-gradient(to bottom, #450a0a, #7f1d1d); // Dark Red
+  }
+  
+  &.biome-gateway {
+    background: linear-gradient(to bottom, #d4d4d8, #f4f4f5); // White/Gray
+    
+    // Invert text colors for light background if needed, but for now we keep UI dark overlaid
+    // Or we can just make it a very bright top gradient
+  }
+
+  &.fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  &.fade-in {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  /* Background Particles */
+  .bg-particle {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.3;
+    animation: floatParticle 20s infinite ease-in-out;
+    
+    &.p1 {
+      width: 600rpx;
+      height: 600rpx;
+      top: -100rpx;
+      left: -100rpx;
+      background: #38bdf8;
+      animation-delay: 0s;
+    }
+    
+    &.p2 {
+      width: 500rpx;
+      height: 500rpx;
+      bottom: 100rpx;
+      right: -100rpx;
+      background: #818cf8;
+      animation-delay: -10s;
+    }
+    
+    &.p3 {
+      width: 300rpx;
+      height: 300rpx;
+      top: 40%;
+      left: 30%;
+      background: #c084fc;
+      animation-delay: -5s;
+    }
+  }
+  
+  /* Biome specific particle colors override */
+  &.biome-ruins .bg-particle {
+    &.p1 { background: #f87171; }
+    &.p2 { background: #fbbf24; }
+    &.p3 { background: #ef4444; }
+  }
+  
+  &.biome-gateway .bg-particle {
+    &.p1 { background: #fde68a; }
+    &.p2 { background: #fcd34d; }
+    &.p3 { background: #ffffff; }
+    opacity: 0.6;
   }
 }
 
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 30rpx rgba(56, 189, 248, 0.2);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 50rpx rgba(56, 189, 248, 0.4);
-    border-color: rgba(255, 255, 255, 0.5);
-  }
+@keyframes floatParticle {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(30px, 50px); }
+  66% { transform: translate(-20px, 20px); }
 }
 
-.settings-btn {
+.hover-scale {
+  transform: scale(1.05);
+  transition: transform 0.1s;
+}
+
+/* Pause UI */
+.pause-btn {
   position: absolute;
-  top: calc(20rpx + env(safe-area-inset-top));
+  top: 40rpx;
   right: 40rpx;
-  font-size: 48rpx;
-  padding: 20rpx;
-  opacity: 0.8;
-  z-index: 40;
-}
-
-/* --- 3. 记忆列表页 (Memorization Phase) --- */
-.memorization-phase {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 20;
-  padding-top: calc(8rpx + env(safe-area-inset-top)); /* Space for progress bar */
-}
-
-.progress-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 8rpx;
-  z-index: 50;
-  padding-top: env(safe-area-inset-top); /* Push down if needed, or just let it sit top */
-  background: rgba(0,0,0,0.2);
-}
-
-.progress-bar {
-  height: 8rpx;
-  width: 100%;
-  background: linear-gradient(90deg, var(--accent-green), var(--accent-red));
-  transform-origin: left;
-  /* animation added via class in JS or strictly here if always on mount */
-}
-
-.anim-countdown {
-  animation: countdown 15s linear forwards;
-}
-
-@keyframes countdown {
-  from { transform: scaleX(1); }
-  to { transform: scaleX(0); }
-}
-
-.list-container {
-  flex: 1;
-  width: 100%;
-  overflow-y: auto;
-  padding: 40rpx;
-  padding-bottom: 200rpx; /* Space for ghost button */
-}
-
-.word-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 40rpx 0;
-  border-bottom: 2rpx solid var(--glass-bg);
-}
-
-.word-english {
-  font-family: 'Courier New', monospace;
-  font-size: 48rpx;
-  font-weight: 700;
-  letter-spacing: 2rpx;
-}
-
-.syllable-1 {
-  opacity: 1.0;
-  text-shadow: 0 0 20rpx var(--accent-cyan);
-  color: var(--accent-cyan);
-}
-.syllable-2 { opacity: 0.6; }
-.syllable-3 { opacity: 0.8; }
-
-.word-chinese {
-  font-size: 32rpx;
-  color: var(--text-dim);
-}
-
-.bottom-area {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  padding: 40rpx 80rpx 80rpx;
-  background: linear-gradient(to top, var(--bg-deep) 0%, transparent 100%);
-  display: flex;
-  justify-content: center;
-}
-
-.ghost-btn {
-  width: 100%;
-  height: 100rpx;
-  background: transparent;
-  border: 2rpx solid rgba(255, 255, 255, 0.4);
-  border-radius: 100rpx;
-  color: var(--text-white);
-  font-size: 36rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: breathe 3s infinite ease-in-out;
-}
-
-@keyframes breathe {
-  0%, 100% { border-color: rgba(255,255,255,0.4); box-shadow: 0 0 10rpx rgba(255,255,255,0.1); }
-  50% { border-color: rgba(255,255,255,0.8); box-shadow: 0 0 30rpx rgba(255,255,255,0.2); }
-}
-
-/* --- 4. 气泡战斗页 (Combat Phase) --- */
-.combat-phase {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 20;
-}
-
-.combat-header {
-  padding-top: calc(20rpx + env(safe-area-inset-top));
-  padding-right: 40rpx;
-  display: flex;
-  justify-content: flex-end;
-  z-index: 50; /* Ensure button clickable */
-}
-
-.question-hint {
-  width: 100%;
-  text-align: center;
-  margin-top: 40rpx;
-  margin-bottom: 20rpx;
-  
-  text {
-    font-size: 36rpx;
-    color: var(--text-dim);
-    letter-spacing: 2rpx;
-    background: rgba(15, 23, 42, 0.4);
-    padding: 10rpx 30rpx;
-    border-radius: 20rpx;
-    border: 1px solid rgba(255,255,255,0.05);
-  }
-}
-
-.skip-btn {
-  padding: 10rpx 30rpx;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 40rpx;
-  font-size: 28rpx;
-  color: var(--text-dim);
-  border: 1px solid rgba(255,255,255,0.1);
-  
-  &:active {
-    background: rgba(255, 69, 58, 0.2); /* Red tint */
-    color: var(--accent-red);
-  }
-}
-
-.slots-container {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20rpx;
-  padding-bottom: 400rpx; /* Push up a bit */
-}
-
-.slot {
-  min-width: 80rpx;
-  height: 100rpx;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 32rpx;
-  font-size: 48rpx;
-  font-weight: bold;
-  transition: all 0.2s;
-  padding: 0 20rpx;
-}
-
-.slot-empty {
-  border: 2rpx dashed rgba(255, 255, 255, 0.2);
-  color: transparent;
-}
-
-.slot-filled {
-  border: 2rpx solid var(--accent-cyan);
-  background: rgba(56, 189, 248, 0.1);
-  color: var(--text-white);
-  box-shadow: 0 0 20rpx rgba(56, 189, 248, 0.4);
-}
-
-.slot-error {
-  border-color: var(--accent-red);
-  color: var(--accent-red);
-}
-
-.slot-success {
-  border-color: var(--accent-green);
-  color: var(--accent-green);
-}
-
-.bubble-pool {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 50%;
-  overflow: hidden;
-  /* border-top: 1px solid rgba(255,255,255,0.05); */
-}
-
-.bubble {
-  position: absolute;
-  width: 140rpx;
-  height: 140rpx;
+  width: 80rpx;
+  height: 80rpx;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  background: var(--glass-bg);
-  border: 2rpx solid rgba(255, 255, 255, 0.2);
+  color: #fff;
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 40rpx;
-  font-weight: bold;
-  color: var(--accent-cyan);
-  backdrop-filter: blur(10rpx);
-  transition: transform 0.2s, opacity 0.2s;
-  
-  /* Float animation applied in inline style for delay, but keyframes here */
-  animation-name: float-bubble-y;
-  animation-duration: 4s;
-  animation-iteration-count: infinite;
-  animation-timing-function: ease-in-out;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
-.bubble-used {
-  opacity: 0;
-  transform: scale(0);
-  pointer-events: none;
-}
-
-@keyframes float-bubble-y {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20rpx); }
-}
-
-.victory-text {
+.pause-overlay {
   position: absolute;
-  top: 30%; /* Move up from 40% to avoid overlapping slots */
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 80rpx;
-  font-weight: 900;
-  color: var(--accent-green);
-  text-shadow: 0 0 40rpx var(--accent-green);
-  opacity: 0;
-  pointer-events: none;
-  z-index: 100;
+  top: 0;
+  left: 0;
   width: 100%;
-  text-align: center;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.2s ease;
+
+  .pause-title {
+    font-size: 60rpx;
+    color: #fff;
+    margin-bottom: 80rpx;
+    font-weight: bold;
+    letter-spacing: 4rpx;
+  }
+
+  .menu-btn {
+    width: 60%;
+    padding: 30rpx 0;
+    margin: 20rpx 0;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    font-size: 36rpx;
+    border-radius: 16rpx;
+    
+    &.resume {
+      background: #fff;
+      color: #0f172a;
+      border-color: #fff;
+    }
+    
+    &.exit {
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+  }
 }
 
-.victory-anim {
-  animation: victory-pop 1.5s forwards;
-}
-
-@keyframes victory-pop {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); filter: blur(20rpx); }
-  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); filter: blur(0); }
-  30% { transform: translate(-50%, -50%) scale(1); }
-  80% { opacity: 1; filter: blur(0); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); filter: blur(20rpx); }
-}
-
-/* Common interaction */
-.hover-scale {
-  transform: scale(0.95);
-  opacity: 0.8;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

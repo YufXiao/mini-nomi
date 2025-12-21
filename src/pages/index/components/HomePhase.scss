@@ -1,0 +1,152 @@
+.home-phase {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 40rpx;
+  padding-top: 100rpx; // Safe area for status bar
+  position: relative;
+  z-index: 10;
+
+  /* Header */
+  .home-header {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end; /* Moved to end since we removed left item */
+    align-items: center;
+    margin-bottom: 40rpx;
+
+    .settings-btn {
+      font-size: 40rpx;
+      opacity: 0.8;
+      padding: 10rpx;
+    }
+  }
+
+  /* Main Content */
+  .home-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 100rpx; // Push up slightly
+
+    .title-area {
+      text-align: center;
+      margin-bottom: 80rpx;
+
+      .main-title {
+        font-size: 80rpx;
+        font-weight: 900;
+        color: #e2e8f0;
+        line-height: 1.1;
+        letter-spacing: 4rpx;
+        text-shadow: 0 0 30rpx rgba(226, 232, 240, 0.3);
+        margin-bottom: 20rpx;
+        display: block;
+      }
+
+      .biome-tag {
+        font-size: 24rpx;
+        color: #94a3b8;
+        letter-spacing: 6rpx;
+        text-transform: uppercase;
+        opacity: 0.8;
+      }
+    }
+
+    .stats-preview {
+      display: flex;
+      justify-content: center; /* Centered since single item */
+      width: 100%;
+      max-width: 500rpx;
+      margin-bottom: 100rpx;
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        .val {
+          font-size: 48rpx;
+          font-weight: bold;
+          color: #38bdf8; // Cyan
+          margin-bottom: 8rpx;
+          
+          &.soul-text {
+            color: #38bdf8; // Match theme or use gold? User image shows blue/cyan
+          }
+        }
+
+        .lbl {
+          font-size: 24rpx;
+          color: #64748b;
+        }
+      }
+    }
+
+    /* Start Button */
+    .start-btn-container {
+      position: relative;
+      width: 360rpx;
+      height: 360rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .outer-ring {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        // animation: pulseRing 3s infinite;
+      }
+
+      .inner-circle {
+        width: 320rpx;
+        height: 320rpx;
+        border-radius: 50%;
+        background: #0f172a; // Dark bg
+        // border: 2px solid #38bdf8; // Cyan border
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 50rpx rgba(56, 189, 248, 0.1);
+        
+        .btn-text {
+          font-size: 48rpx;
+          font-weight: 900;
+          color: #38bdf8;
+          text-align: center;
+          line-height: 1.2;
+          letter-spacing: 2rpx;
+        }
+
+        .btn-sub {
+          margin-top: 10rpx;
+          font-size: 24rpx;
+          color: #64748b;
+        }
+      }
+    }
+  }
+}
+
+.hover-scale {
+  transform: scale(1.1);
+  transition: transform 0.2s;
+}
+
+.hover-scale-large {
+  transform: scale(1.05);
+  transition: transform 0.2s;
+  
+  .inner-circle {
+    background: #1e293b;
+    box-shadow: 0 0 60rpx rgba(56, 189, 248, 0.2);
+  }
+}

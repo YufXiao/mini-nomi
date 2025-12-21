@@ -1,0 +1,117 @@
+# 产品交互流程图 (Product User Flow)
+
+基于 Dungeon Ascension v3.2 (含撤销与连续闯关逻辑)。
+
+```mermaid
+flowchart TD
+    %% --- 样式定义 ---
+    classDef startend fill:#fff,stroke:#333,stroke-width:2px,color:#000;
+    classDef phase fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#fff;
+    classDef action fill:#1E293B,stroke:#94A3B8,stroke-width:1px,color:#fff;
+    classDef decision fill:#0F172A,stroke:#32D74B,stroke-width:1px,color:#fff,stroke-dasharray: 5 5;
+    classDef system fill:#334155,stroke:#none,color:#fff;
+
+    %% --- 节点定义 ---
+    Start((启动应用)):::startend
+    
+    %% 阶段 0: 首页
+    subgraph HomePhase [阶段 0: 首页 (Camp)]
+        InitHUD[初始化 HUD\n加载存档]:::system
+        DisplayHome[展示首页]:::phase
+        ClickStart([点击 START CLIMB]):::action
+    end
+
+    %% 阶段 1: 记忆阶段
+    subgraph MemoPhase [阶段 1: 记忆阶段 (Memorization)]
+        InitList[加载本轮单词组 (Run)\n启动倒计时]:::system
+        DisplayList[展示单词列表 & 进度条]:::phase
+        WaitTimeout{倒计时结束?}:::decision
+        ClickReady([点击 I'M READY]):::action
+    end
+
+    %% 阶段 2: 战斗阶段
+    subgraph CombatPhase [阶段 2: 气泡战斗阶段 (Climb)]
+        LoadLevel[加载当前关卡]:::system
+        DisplayCombat[展示战斗界面\n气泡/槽位/撤销按钮]:::phase
+        
+        %% 用户操作分支
+        subgraph Interaction [用户交互]
+            ClickSkip([点击 SKIP ⏭]):::action
+            ClickBubble([点击气泡]):::action
+            ClickUndo([点击退格 ⌫ 或 已填槽位]):::action
+        end
+        
+        FillSlot[气泡飞入槽位]:::system
+        UndoSlot[清空槽位\n气泡飞回池子]:::system
+        CheckFull{槽位已满?}:::decision
+        
+        %% 判定逻辑
+        Validate{答案正确?}:::decision
+        
+        %% 结果反馈
+        CalcReward[魂火+1 / 累积上升高度]:::system
+        FeedbackSuccess[显示胜利动效]:::system
+        FeedbackError[震动反馈 Shake]:::system
+        
+        %% 关卡流转
+        NextLevel{本轮 Run 结束?}:::decision
+    end
+
+    %% 阶段 3: 结算阶段
+    subgraph SettlementPhase [阶段 3: 结算阶段 (Rest Point)]
+        CalcTotal[汇总本轮收益]:::system
+        DisplaySettle[展示结算页\n上升动画]:::phase
+        UpdateSave[保存进度]:::system
+        ClickContinue([点击按钮]):::action
+        
+        CheckSurface{已到达地表 (0F)?}:::decision
+    end
+
+    %% --- 连线逻辑 ---
+
+    %% 启动
+    Start --> InitHUD --> DisplayHome
+    DisplayHome --> ClickStart
+    
+    %% 开始循环 (Start Loop)
+    ClickStart --> InitList
+    
+    %% 记忆 -> 战斗
+    InitList --> DisplayList
+    DisplayList --> WaitTimeout & ClickReady
+    WaitTimeout -- 是 --> LoadLevel
+    WaitTimeout -- 否 --> DisplayList
+    ClickReady --> LoadLevel
+
+    %% 战斗循环
+    LoadLevel --> DisplayCombat
+    
+    %% 交互: 跳过
+    DisplayCombat --> ClickSkip --> NextLevel
+
+    %% 交互: 拼写
+    DisplayCombat --> ClickBubble --> FillSlot
+    FillSlot --> CheckFull
+    CheckFull -- 否 --> DisplayCombat
+    CheckFull -- 是 --> Validate
+
+    %% 交互: 撤销
+    DisplayCombat --> ClickUndo --> UndoSlot
+    UndoSlot --> DisplayCombat
+
+    %% 验证
+    Validate -- 正确 --> CalcReward --> FeedbackSuccess --> NextLevel
+    Validate -- 错误 --> FeedbackError --> DisplayCombat
+
+    %% 轮次流转
+    NextLevel -- 否 (还有下一关) --> LoadLevel
+    NextLevel -- 是 (Run 完成) --> CalcTotal
+
+    %% 结算与循环判定
+    CalcTotal --> DisplaySettle --> UpdateSave --> ClickContinue
+    ClickContinue --> CheckSurface
+    
+    CheckSurface -- 是 (通关) --> InitHUD 
+    %% 关键循环: 未通关则回到记忆阶段开始新的一轮
+    CheckSurface -- 否 (继续爬) --> InitList
+    

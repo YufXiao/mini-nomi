@@ -6,7 +6,7 @@ export default defineAppConfig({
   window: {
     backgroundTextStyle: 'light',
     navigationBarBackgroundColor: '#020817',
-    navigationBarTitleText: 'Memory Dungeon',
+    navigationBarTitleText: '记忆地牢',
     navigationBarTextStyle: 'white',
     backgroundColor: '#020817'
   }

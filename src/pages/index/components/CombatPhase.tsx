@@ -1,11 +1,14 @@
 import { View, Text } from '@tarojs/components'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { WordData } from '@/data/gameData'
+import { getGameState } from '@/utils/gameState'
+import './CombatPhase.scss'
 
 interface CombatPhaseProps {
   wordData: WordData[];
-  onComplete: () => void;
+  onComplete: (results: { success: boolean; words: WordData[]; correctCount: number }) => void;
   className?: string;
+  isPaused?: boolean;
 }
 
 interface BubbleItem {
@@ -18,24 +21,57 @@ interface BubbleItem {
   isUsed: boolean;
 }
 
-export default function CombatPhase({ wordData, onComplete, className = '' }: CombatPhaseProps) {
+export default function CombatPhase({ wordData, onComplete, className = '', isPaused = false }: CombatPhaseProps) {
   const [currentLevel, setCurrentLevel] = useState(0);
-  const [userFilled, setUserFilled] = useState<string[]>([]);
+  const [userFilled, setUserFilled] = useState<{ text: string, bubbleId: string }[]>([]);
   const [bubbles, setBubbles] = useState<BubbleItem[]>([]);
   const [shake, setShake] = useState(false);
   const [victory, setVictory] = useState(false);
   const [slotsStatus, setSlotsStatus] = useState<'normal' | 'success' | 'error'>('normal');
+  
+  // New State
+  const [hp, setHp] = useState(3);
+  const [maxHp, setMaxHp] = useState(3);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [currentFloor, setCurrentFloor] = useState(1000);
 
   const currentWord = wordData[currentLevel];
+
+  // Initialize Game State
+  useEffect(() => {
+    const state = getGameState();
+    setHp(state.lantern.fuel);
+    setMaxHp(state.lantern.fuel);
+    setCurrentFloor(state.currentFloor);
+  }, []);
 
   // Initialize level
   useEffect(() => {
     if (currentLevel >= wordData.length) {
-      onComplete();
+      // Success completion
+      onComplete({
+        success: true,
+        words: wordData,
+        correctCount: correctCount
+      });
       return;
     }
     loadLevel(currentLevel);
   }, [currentLevel]);
+
+  // Check HP
+  useEffect(() => {
+    if (hp <= 0) {
+      // Failed run
+      setTimeout(() => {
+        onComplete({
+          success: false,
+          words: wordData.slice(0, currentLevel + 1), // Processed so far
+          correctCount: correctCount
+        });
+      }, 500);
+    }
+  }, [hp]);
 
   const loadLevel = (levelIndex: number) => {
     const data = wordData[levelIndex];
@@ -61,8 +97,6 @@ export default function CombatPhase({ wordData, onComplete, className = '' }: Co
 
     for (const syl of shuffledPool) {
       if (distractors.length >= 3) break;
-      // Avoid duplicates with correct answer and already picked distractors
-      // (Simple check, though in rare cases duplicate distractors are fine)
       if (!data.syllables.includes(syl) && !distractors.some(d => d.text === syl)) {
         distractors.push({
           text: syl,
@@ -112,13 +146,13 @@ export default function CombatPhase({ wordData, onComplete, className = '' }: Co
   };
 
   const handleBubbleClick = (bubbleId: string, text: string) => {
-    if (userFilled.length >= currentWord.syllables.length || slotsStatus !== 'normal') return;
+    if (isPaused || userFilled.length >= currentWord.syllables.length || slotsStatus !== 'normal' || hp <= 0) return;
 
     // Mark bubble as used
     setBubbles(prev => prev.map(b => b.id === bubbleId ? { ...b, isUsed: true } : b));
     
     // Add to filled
-    const newFilled = [...userFilled, text];
+    const newFilled = [...userFilled, { text, bubbleId }];
     setUserFilled(newFilled);
 
     // Check if full
@@ -127,30 +161,51 @@ export default function CombatPhase({ wordData, onComplete, className = '' }: Co
     }
   };
 
-  const checkAnswer = (filled: string[]) => {
-    const isCorrect = filled.join('') === currentWord.syllables.join('');
+  const handleUndo = () => {
+    if (isPaused || userFilled.length === 0 || slotsStatus !== 'normal') return;
+
+    const lastItem = userFilled[userFilled.length - 1];
+    const newFilled = userFilled.slice(0, -1);
+    setUserFilled(newFilled);
+
+    // Return bubble to pool
+    setBubbles(prev => prev.map(b => b.id === lastItem.bubbleId ? { ...b, isUsed: false } : b));
+  };
+
+  const checkAnswer = (filled: { text: string, bubbleId: string }[]) => {
+    const isCorrect = filled.map(f => f.text).join('') === currentWord.syllables.join('');
     
     if (isCorrect) {
       setSlotsStatus('success');
       setVictory(true);
+      setCorrectCount(prev => prev + 1);
+      
+      // Simulate local ascent (visual only)
+      setCurrentFloor(prev => Math.max(0, prev - 10));
+
       setTimeout(() => {
         setCurrentLevel(prev => prev + 1);
       }, 1500);
     } else {
       setSlotsStatus('error');
       setShake(true);
+      setHp(prev => Math.max(0, prev - 1)); // Deduct HP
+      
       setTimeout(() => setShake(false), 400);
 
       // Reset after delay
       setTimeout(() => {
-        setUserFilled([]);
-        setSlotsStatus('normal');
-        setBubbles(prev => prev.map(b => ({ ...b, isUsed: false })));
+        if (hp > 1) { // Only reset if not dead (hp check uses old value here, so > 1 means > 0 next render)
+            setUserFilled([]);
+            setSlotsStatus('normal');
+            setBubbles(prev => prev.map(b => ({ ...b, isUsed: false })));
+        }
       }, 600);
     }
   };
 
   const handleSkip = () => {
+    if (isPaused) return;
     setShake(true);
     setTimeout(() => setShake(false), 400);
     setTimeout(() => {
@@ -162,22 +217,46 @@ export default function CombatPhase({ wordData, onComplete, className = '' }: Co
 
   return (
     <View className={`combat-phase ${className} ${shake ? 'shake' : ''}`}>
+      {/* Altimeter Side Bar */}
+      <View className="altimeter">
+        <View className="ruler" />
+        <View className="indicator" style={{ bottom: `${(currentLevel / wordData.length) * 100}%` }}>
+            <View className="arrow">◀</View>
+            <Text className="floor-label">B{Math.floor(currentFloor)}F</Text>
+        </View>
+      </View>
+
+      {/* HP Bar */}
+      <View className="hp-bar">
+          {Array.from({ length: maxHp }).map((_, i) => (
+              <View key={i} className={`heart ${i < hp ? 'full' : 'empty'}`} />
+          ))}
+      </View>
+
       {victory && (
-        <Text className="victory-text victory-anim">{currentWord.word.toUpperCase()}</Text>
+        <Text 
+          className="victory-text victory-anim"
+          style={{ animationPlayState: isPaused ? 'paused' : 'running' }}
+        >
+          {currentWord.word.toUpperCase()}
+        </Text>
       )}
 
       <View className="combat-header">
+        <View className="undo-btn" onClick={handleUndo} hoverClass="hover-scale">⌫</View>
         <View className="skip-btn" onClick={handleSkip} hoverClass="hover-scale">SKIP ⏭</View>
       </View>
 
       {/* Question Hint */}
       <View className="question-hint">
         <Text>{currentWord.cn}</Text>
+        <Text className="difficulty-tag">{currentWord.difficulty}</Text>
       </View>
 
       <View className={`slots-container ${shake ? 'shake' : ''}`}>
         {currentWord.syllables.map((_, i) => {
-          const filledText = userFilled[i];
+          const filledItem = userFilled[i];
+          const filledText = filledItem ? filledItem.text : '';
           let statusClass = 'slot-empty';
           if (filledText) {
              statusClass = 'slot-filled';
@@ -186,7 +265,15 @@ export default function CombatPhase({ wordData, onComplete, className = '' }: Co
           }
           
           return (
-            <View key={i} className={`slot ${statusClass}`}>
+            <View 
+              key={i} 
+              className={`slot ${statusClass}`}
+              onClick={() => {
+                if (filledText && i === userFilled.length - 1) {
+                  handleUndo();
+                }
+              }}
+            >
               {filledText}
             </View>
           );
@@ -201,7 +288,8 @@ export default function CombatPhase({ wordData, onComplete, className = '' }: Co
             style={{
               top: `${bubble.top}%`,
               left: `${bubble.left}%`,
-              animationDelay: `${bubble.delay}s`
+              animationDelay: `${bubble.delay}s`,
+              animationPlayState: isPaused ? 'paused' : 'running'
             }}
             onClick={() => handleBubbleClick(bubble.id, bubble.text)}
           >

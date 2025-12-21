@@ -32,10 +32,6 @@ export default function SettlementPhase({ results, onContinue, className = '' }:
       height = results.words.reduce((acc, word) => {
         return acc + (10 * getDifficultyModifier(word.difficulty));
       }, 0);
-      
-      // Calculate Soul Fire
-      // +1 per correct word (simplified, assuming full run success implies all correct or passed)
-      fire = results.correctCount;
     } else {
       // Fall penalty
       // Fall 10 floors, but respected checkpoints (every 100)
@@ -44,6 +40,10 @@ export default function SettlementPhase({ results, onContinue, className = '' }:
       const fallTarget = Math.min(current + 10, nextCheckpoint); // Higher number is deeper
       height = -(fallTarget - current); // Negative height for fall
     }
+
+    // Soul Fire is now incrementally saved in CombatPhase
+    // We just display what was earned in this run
+    fire = results.correctCount;
 
     setAscensionHeight(height);
     setSoulFireGained(fire);
@@ -56,10 +56,9 @@ export default function SettlementPhase({ results, onContinue, className = '' }:
     
     setFinalFloor(targetFloor);
 
-    // Update Global State
+    // Update Global State (Soul Fire already updated)
     updateGameState({
       currentFloor: targetFloor,
-      soulFire: currentState.soulFire + fire,
       // Add mastered words logic later
     });
 
@@ -88,29 +87,29 @@ export default function SettlementPhase({ results, onContinue, className = '' }:
   return (
     <View className={`settlement-phase ${className}`}>
       <View className="title">
-        {results.success ? 'ASCENSION' : 'THE FALL'}
+        {results.success ? '飞升' : '坠落'}
       </View>
 
       <View className="stats-container">
         <View className="stat-row">
-          <Text className="label">Current Depth</Text>
-          <Text className="value">B{Math.floor(animFloor)}F</Text>
+          <Text className="label">当前深度</Text>
+          <Text className="value">地下{Math.floor(animFloor)}层</Text>
         </View>
         
         <View className="stat-row">
-          <Text className="label">Climb</Text>
+          <Text className="label">攀升高度</Text>
           <Text className={`value ${results.success ? 'positive' : 'negative'}`}>
-            {results.success ? '▲' : '▼'} {Math.abs(Math.floor(ascensionHeight))}m
+            {results.success ? '▲' : '▼'} {Math.abs(Math.floor(ascensionHeight))}米
           </Text>
         </View>
 
         <View className="stat-row">
-          <Text className="label">Soul Fire</Text>
+          <Text className="label">灵魂之火</Text>
           <Text className="value">+{soulFireGained} 🔥</Text>
         </View>
       </View>
 
-      <Button className="continue-btn" onClick={onContinue}>CONTINUE</Button>
+      <Button className="continue-btn" onClick={onContinue}>继续</Button>
     </View>
   );
 }

@@ -2,7 +2,7 @@ import { View, Button, Text } from '@tarojs/components'
 import { useState, useEffect } from 'react'
 import { useDidShow } from '@tarojs/taro'
 import { wordData, type WordData } from '@/data/gameData'
-import { getGameState } from '@/utils/gameState'
+import { getGameState, startNewRun } from '@/utils/gameState'
 import HomePhase from './components/HomePhase'
 import MemoPhase from './components/MemoPhase'
 import CombatPhase from './components/CombatPhase'
@@ -50,6 +50,12 @@ export default function Index() {
     const shuffled = [...wordData].sort(() => Math.random() - 0.5);
     setSessionWords(shuffled.slice(0, 5));
     switchPhase('memo');
+  };
+
+  const handleStartNewGame = () => {
+    startNewRun();
+    updateBiome();
+    startGame();
   };
 
   // Helper to handle phase transition with animation
@@ -107,27 +113,27 @@ export default function Index() {
       {/* Pause Menu Overlay */}
       {isPaused && (
         <View className="pause-overlay">
-          <Text className="pause-title">PAUSED</Text>
+          <Text className="pause-title">暂停</Text>
           <Button 
             className="menu-btn resume" 
             onClick={() => setIsPaused(false)}
             hoverClass="hover-scale"
           >
-            RESUME
+            继续游戏
           </Button>
           <Button 
             className="menu-btn exit" 
             onClick={handleExit}
             hoverClass="hover-scale"
           >
-            EXIT TO CAMP
+            返回营地
           </Button>
         </View>
       )}
 
       {phase === 'home' && (
         <HomePhase 
-          onStart={startGame} 
+          onStart={handleStartNewGame} 
         />
       )}
 

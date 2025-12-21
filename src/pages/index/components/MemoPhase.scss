@@ -29,6 +29,7 @@
   .list-container {
     flex: 1;
     overflow-y: auto;
+    padding-right: 25rpx;
     
     .word-row {
       margin-bottom: 60rpx;
@@ -36,7 +37,7 @@
       animation: fadeIn 0.5s ease-out forwards;
       
       .word-english {
-        font-size: 72rpx;
+        font-size: 56rpx;
         font-weight: bold;
         color: #fff;
         margin-bottom: 16rpx;

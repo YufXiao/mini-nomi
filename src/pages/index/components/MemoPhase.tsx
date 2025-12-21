@@ -56,6 +56,12 @@ export default function MemoPhase({ wordData, onReady, className = '', isPaused 
     };
   }, [isPaused]); // Remove other deps to avoid reset loops
 
+  const difficultyMap: Record<string, string> = {
+    'Easy': '简单',
+    'Medium': '中等',
+    'Hard': '困难'
+  };
+
   return (
     <View className={`memorization-phase ${className}`}>
       <View className="progress-container">
@@ -90,7 +96,7 @@ export default function MemoPhase({ wordData, onReady, className = '', isPaused 
             <View className="word-meta">
               <Text className="word-chinese">{item.cn}</Text>
               <Text className={`difficulty-badge ${item.difficulty.toLowerCase()}`}>
-                {item.difficulty}
+                {difficultyMap[item.difficulty] || item.difficulty}
               </Text>
             </View>
           </View>
@@ -98,7 +104,7 @@ export default function MemoPhase({ wordData, onReady, className = '', isPaused 
       </View>
 
       <View className="bottom-area">
-        <Button className="ghost-btn" onClick={onReady} hoverClass="hover-scale">I'M READY</Button>
+        <Button className="ghost-btn" onClick={onReady} hoverClass="hover-scale">我准备好了</Button>
       </View>
     </View>
   );

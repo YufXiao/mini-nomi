@@ -7,59 +7,49 @@
   /* Altimeter */
   .altimeter {
     position: absolute;
-    right: 20rpx;
-    top: 20%;
-    bottom: 20%;
-    width: 40rpx;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20rpx;
+    right: 30rpx;
+    top: 26%;
+    bottom: 26%;
+    width: 12rpx; /* Thicker +2px approx */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     z-index: 5;
 
-    .ruler {
-      width: 100%;
-      height: 100%;
-      // Use gradient to simulate ticks
-      background: repeating-linear-gradient(
-        to bottom,
-        rgba(255, 255, 255, 0.3),
-        rgba(255, 255, 255, 0.3) 2rpx,
-        transparent 2rpx,
-        transparent 10%
-      );
+    .progress-text {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 20rpx;
+      font-family: monospace;
+      font-weight: bold;
+      margin-bottom: 10rpx;
     }
 
-    .indicator {
-      position: absolute;
-      left: -140rpx; // Adjusted for larger text
-      width: 160rpx;
-      height: 60rpx;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end; // Align right
-      transition: bottom 0.5s ease-out;
+    .progress-track {
+      width: 100%;
+      flex: 1;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 6rpx;
+      position: relative;
+      overflow: hidden;
 
-      .arrow {
-        color: #fbbf24;
-        font-size: 40rpx;
-        margin-right: 10rpx;
-      }
-      
-      .floor-label {
-        color: #fff;
-        font-size: 28rpx;
-        font-family: monospace;
+      .progress-fill {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: #4ade80; /* Green */
+        transition: height 0.5s ease-out;
+        border-radius: 6rpx;
       }
     }
   }
 
   /* HP Bar */
   .hp-bar {
-    position: absolute;
-    top: 120rpx; // Safe area
-    left: 40rpx;
+    // Removed absolute positioning to fit in header
     display: flex;
-    gap: 20rpx;
-    z-index: 10;
+    gap: 10rpx;
+    pointer-events: auto;
 
     .heart {
       width: 48rpx;
@@ -78,30 +68,17 @@
 
   .combat-header {
     position: absolute;
-    top: 120rpx;
+    top: 40rpx;
     left: 0;
     width: 100%;
+    height: 80rpx; // Match pause button height
     padding: 0 40rpx;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     z-index: 10;
     box-sizing: border-box;
     pointer-events: none;
-
-    .undo-btn {
-      pointer-events: auto;
-      width: 80rpx;
-      height: 80rpx;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 36rpx;
-    }
 
     .skip-btn {
       pointer-events: auto;
@@ -109,6 +86,32 @@
       color: #94a3b8;
       font-weight: bold;
       padding: 20rpx;
+    }
+  }
+
+  .undo-btn {
+    position: absolute;
+    bottom: 60rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: auto;
+    width: 240rpx;
+    height: 90rpx;
+    border-radius: 45rpx;
+    background: rgba(255, 255, 255, 0.1);
+    border: 3rpx solid rgba(255, 255, 255, 0.4);
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 50rpx;
+    z-index: 20;
+    backdrop-filter: blur(4rpx);
+    transition: all 0.2s;
+    
+    &:active {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateX(-50%) scale(0.95);
     }
   }
 
@@ -140,7 +143,7 @@
 
   .victory-text {
     position: absolute;
-    top: 40%;
+    top: 29%; // Centered between hint (18%) and slots (35%)
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 100rpx;
@@ -201,7 +204,7 @@
   .bubble-pool {
     position: absolute;
     top: 50%;
-    bottom: 0;
+    bottom: 180rpx; // Leave space for undo button
     width: 100%;
     z-index: 1;
 
@@ -219,10 +222,13 @@
       animation: float 6s infinite ease-in-out;
       transition: transform 0.2s, opacity 0.3s;
       cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
 
       &:active {
         transform: scale(0.9);
-        background: rgba(255, 255, 255, 0.3);
+        // background: rgba(255, 255, 255, 0.3);
       }
       
       &.bubble-used {
@@ -246,10 +252,27 @@
 }
 
 .shake {
-  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
-}
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+  }
 
-@keyframes shake {
+  .flying-bubble {
+    position: fixed;
+    z-index: 100;
+    padding: 20rpx 40rpx;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2rpx solid rgba(255, 255, 255, 0.3);
+    border-radius: 60rpx;
+    color: #fff;
+    font-size: 48rpx;
+    font-weight: bold;
+    backdrop-filter: blur(8rpx);
+    box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    transition: top 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: none;
+  }
+
+  @keyframes shake {
   10%, 90% { transform: translate3d(-4rpx, 0, 0); }
   20%, 80% { transform: translate3d(8rpx, 0, 0); }
   30%, 50%, 70% { transform: translate3d(-16rpx, 0, 0); }

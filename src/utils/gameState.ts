@@ -51,6 +51,19 @@ export const updateGameState = (updates: Partial<GameState>) => {
   return newState;
 };
 
+export const startNewRun = () => {
+  const current = getGameState();
+  const newState: GameState = {
+    ...DEFAULT_STATE,
+    soulFire: current.soulFire,
+    masteredWords: current.masteredWords,
+    lastLogin: current.lastLogin,
+    consecutiveLogins: current.consecutiveLogins
+  };
+  saveGameState(newState);
+  return newState;
+};
+
 export const resetGameState = () => {
   Taro.removeStorageSync(STORAGE_KEY);
   return DEFAULT_STATE;
